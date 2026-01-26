@@ -18,7 +18,7 @@ export class CreateCatDto {
   @IsString()
   @MinLength(1)
   @MaxLength(255)
-  name: string;
+  readonly name: string;
 
   @ApiProperty({
     description: 'The age of a cat',
@@ -29,7 +29,7 @@ export class CreateCatDto {
   @IsNumber()
   @Min(1)
   @Max(9999)
-  age: number;
+  readonly age: number;
 
   @ApiProperty({
     description: 'The breed of a cat',
@@ -40,5 +40,5 @@ export class CreateCatDto {
   @IsString()
   @MinLength(1)
   @MaxLength(255)
-  breed: string;
+  readonly breed: string;
 }

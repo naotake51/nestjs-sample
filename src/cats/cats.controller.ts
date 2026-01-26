@@ -7,12 +7,17 @@ import {
   Param,
   Delete,
   NotFoundException,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { CreateCatDto } from './dto/create-cat-dto';
 import { UpdateCatDto } from './dto/update-cat-dto';
 import { CatResponseDto } from './dto/cat-response-dto';
 import { CatsService } from './cats.service';
-import { ApiNotFoundResponse, ApiOkResponse } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { ErrorResponseDto } from '../dto/error-response';
 import { plainToInstance } from 'class-transformer';
 
@@ -21,8 +26,17 @@ export class CatsController {
   constructor(private catsService: CatsService) {}
 
   @Post()
-  async create(@Body() createCatDto: CreateCatDto): Promise<void> {
-    await this.catsService.create(createCatDto);
+  @ApiBadRequestResponse({
+    description: 'Invalid input',
+    type: ErrorResponseDto,
+  })
+  @ApiOkResponse({ description: 'Cat created', type: CatResponseDto })
+  async create(@Body() createCatDto: CreateCatDto): Promise<CatResponseDto> {
+    const cat = await this.catsService.create(createCatDto);
+
+    return plainToInstance(CatResponseDto, cat, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Get()
@@ -36,12 +50,18 @@ export class CatsController {
   }
 
   @Get(':id')
+  @ApiBadRequestResponse({
+    description: 'Invalid ID supplied',
+    type: ErrorResponseDto,
+  })
   @ApiNotFoundResponse({
     description: 'Cat not found',
     type: ErrorResponseDto,
   })
   @ApiOkResponse({ description: 'Cat found', type: CatResponseDto })
-  async findOne(@Param('id') id: string): Promise<CatResponseDto | null> {
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<CatResponseDto | null> {
     const cat = await this.catsService.findOne(id);
 
     if (!cat) {
@@ -54,15 +74,49 @@ export class CatsController {
   }
 
   @Put(':id')
+  @ApiBadRequestResponse({
+    description: 'Invalid ID supplied',
+    type: ErrorResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'Cat not found',
+    type: ErrorResponseDto,
+  })
+  @ApiOkResponse({ description: 'Cat updated', type: CatResponseDto })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateCatDto: UpdateCatDto,
-  ): Promise<void> {
-    await this.catsService.update({ id, ...updateCatDto });
+  ): Promise<CatResponseDto> {
+    const cat = await this.catsService.update({ id, ...updateCatDto });
+
+    if (!cat) {
+      throw new NotFoundException('Cat not found');
+    }
+
+    return plainToInstance(CatResponseDto, cat, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string): Promise<void> {
-    await this.catsService.delete(id);
+  @ApiBadRequestResponse({
+    description: 'Invalid ID supplied',
+    type: ErrorResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'Cat not found',
+    type: ErrorResponseDto,
+  })
+  @ApiOkResponse({ description: 'Cat deleted', type: CatResponseDto })
+  async remove(@Param('id', ParseIntPipe) id: number): Promise<CatResponseDto> {
+    const cat = await this.catsService.delete(id);
+
+    if (!cat) {
+      throw new NotFoundException('Cat not found');
+    }
+
+    return plainToInstance(CatResponseDto, cat, {
+      excludeExtraneousValues: true,
+    });
   }
 }

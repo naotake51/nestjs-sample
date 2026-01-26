@@ -3,10 +3,10 @@ import { Expose } from 'class-transformer';
 export class CatResponseDto {
   @ApiProperty({
     description: 'The unique identifier of a cat',
-    example: '00000000-0000-0000-0000-000000000000',
+    example: 1,
   })
   @Expose()
-  id: string;
+  readonly id: number;
 
   @ApiProperty({
     description: 'The name of a cat',
@@ -15,7 +15,7 @@ export class CatResponseDto {
     maxLength: 255,
   })
   @Expose()
-  public name: string;
+  readonly name: string;
 
   @ApiProperty({
     description: 'The age of a cat',
@@ -24,7 +24,7 @@ export class CatResponseDto {
     maximum: 9999,
   })
   @Expose()
-  age: number;
+  readonly age: number;
 
   @ApiProperty({
     description: 'The breed of a cat',
@@ -33,5 +33,5 @@ export class CatResponseDto {
     maxLength: 255,
   })
   @Expose()
-  breed: string;
+  readonly breed: string;
 }
