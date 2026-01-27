@@ -32,6 +32,7 @@ export class CatsController {
   })
   @ApiOkResponse({ description: 'Cat created', type: CatResponseDto })
   async create(@Body() createCatDto: CreateCatDto): Promise<CatResponseDto> {
+    console.log('createCatDto:', createCatDto);
     const cat = await this.catsService.create(createCatDto);
 
     return plainToInstance(CatResponseDto, cat, {

@@ -5,5 +5,10 @@ export class ErrorResponseDto {
   statusCode: number;
 
   @ApiProperty()
-  message: string;
+  error: string;
+
+  @ApiProperty({
+    oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }],
+  })
+  message: string | string[];
 }

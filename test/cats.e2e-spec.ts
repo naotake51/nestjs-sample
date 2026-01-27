@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
@@ -15,6 +15,9 @@ describe('Cats (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     prisma = moduleFixture.get<PrismaService>(PrismaService);
     await app.init();
   });
@@ -85,6 +88,25 @@ describe('Cats (e2e)', () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       id: expect.any(Number),
       ...payload,
+    });
+  });
+
+  it('POST /cats returns 400 for invalid payload', async () => {
+    const payload = {
+      name: '',
+      age: 1,
+      breed: 'Munchkin',
+    };
+
+    const response = await request(app.getHttpServer())
+      .post('/cats')
+      .send(payload)
+      .expect(400);
+
+    expect(response.body).toEqual({
+      statusCode: 400,
+      message: ['name must be longer than or equal to 1 characters'],
+      error: 'Bad Request',
     });
   });
 
