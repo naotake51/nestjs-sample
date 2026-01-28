@@ -3,7 +3,7 @@ import {
   IsString,
   MinLength,
   MaxLength,
-  IsNumber,
+  IsInt,
   Min,
   Max,
 } from 'class-validator';
@@ -26,19 +26,17 @@ export class CreateCatDto {
     minimum: 1,
     maximum: 9999,
   })
-  @IsNumber()
+  @IsInt()
   @Min(1)
   @Max(9999)
   readonly age: number;
 
   @ApiProperty({
-    description: 'The breed of a cat',
-    example: 'Siamese',
-    minLength: 1,
-    maxLength: 255,
+    description: 'The breed ID of a cat',
+    example: 1,
+    minimum: 1,
   })
-  @IsString()
-  @MinLength(1)
-  @MaxLength(255)
-  readonly breed: string;
+  @IsInt()
+  @Min(1)
+  readonly breedId: number;
 }

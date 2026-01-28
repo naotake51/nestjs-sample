@@ -15,8 +15,16 @@ datasource db {
 }
 
 model Cat {
-  id    Int    @id @default(autoincrement())
-  name  String
-  age   Int
-  breed String
+  id      Int      @id @default(autoincrement())
+  name    String
+  age     Int
+  breedId Int
+  breed   CatBreed @relation(fields: [breedId], references: [id])
+}
+
+model CatBreed {
+  id          Int    @id @default(autoincrement())
+  name        String @unique
+  description String
+  cats        Cat[]
 }

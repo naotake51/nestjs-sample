@@ -2,5 +2,12 @@ export interface Cat {
   id: number;
   name: string;
   age: number;
-  breed: string;
+  breedId: number;
+  breed?: CatBreed;
+}
+
+export interface CatBreed {
+  id: number;
+  name: string;
+  description: string;
 }

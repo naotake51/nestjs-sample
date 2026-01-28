@@ -20,12 +20,18 @@ describe('CatsController', () => {
   });
 
   it('findAll', async () => {
+    const breed = {
+      id: 1,
+      name: 'Siamese',
+      description: 'Known for their blue eyes.',
+    };
     const results = [
       {
         id: 1,
         name: 'Kitty',
         age: 2,
-        breed: 'Siamese',
+        breedId: breed.id,
+        breed,
       },
     ];
 
@@ -39,11 +45,17 @@ describe('CatsController', () => {
   });
 
   it('findOne', async () => {
+    const breed = {
+      id: 1,
+      name: 'Siamese',
+      description: 'Known for their blue eyes.',
+    };
     const result = {
       id: 1,
       name: 'Kitty',
       age: 2,
-      breed: 'Siamese',
+      breedId: breed.id,
+      breed,
     };
 
     const findOneSpy = jest.spyOn(service, 'findOne').mockResolvedValue(result);
@@ -68,11 +80,17 @@ describe('CatsController', () => {
     const createDto = {
       name: 'Mochi',
       age: 1,
-      breed: 'Munchkin',
+      breedId: 1,
+    };
+    const breed = {
+      id: 1,
+      name: 'Munchkin',
+      description: 'Short legs and playful.',
     };
     const result = {
       id: 1,
       ...createDto,
+      breed,
     };
 
     const createSpy = jest.spyOn(service, 'create').mockResolvedValue(result);
@@ -87,11 +105,17 @@ describe('CatsController', () => {
     const updateDto = {
       name: 'Luna',
       age: 3,
-      breed: 'Ragdoll',
+      breedId: 2,
+    };
+    const breed = {
+      id: 2,
+      name: 'Ragdoll',
+      description: 'Gentle and affectionate.',
     };
     const result = {
       id: 1,
       ...updateDto,
+      breed,
     };
 
     const updateSpy = jest.spyOn(service, 'update').mockResolvedValue(result);
@@ -109,7 +133,7 @@ describe('CatsController', () => {
     const updateDto = {
       name: 'Luna',
       age: 3,
-      breed: 'Ragdoll',
+      breedId: 2,
     };
     const result = null;
 
@@ -121,11 +145,17 @@ describe('CatsController', () => {
   });
 
   it('remove', async () => {
+    const breed = {
+      id: 3,
+      name: 'Siberian',
+      description: 'Thick coat and hardy.',
+    };
     const result = {
       id: 1,
       name: 'Poppy',
       age: 4,
-      breed: 'Siberian',
+      breedId: breed.id,
+      breed,
     };
 
     const deleteSpy = jest.spyOn(service, 'delete').mockResolvedValue(result);

@@ -6,7 +6,7 @@ describe('CreateCatDto validation', () => {
   const basePayload = {
     name: 'Mochi',
     age: 2,
-    breed: 'Munchkin',
+    breedId: 1,
   };
 
   it('accepts a valid payload', async () => {
@@ -110,6 +110,19 @@ describe('CreateCatDto validation', () => {
       );
     });
 
+    it('rejects a non-integer age', async () => {
+      const dto = plainToInstance(CreateCatDto, {
+        ...basePayload,
+        age: 1.5,
+      });
+
+      const errors = await validate(dto);
+      const ageError = errors.find((error) => error.property === 'age');
+      expect(ageError?.constraints?.isInt).toBe(
+        'age must be an integer number',
+      );
+    });
+
     it('rejects a non-number age', async () => {
       const dto = plainToInstance(CreateCatDto, {
         ...basePayload,
@@ -118,58 +131,60 @@ describe('CreateCatDto validation', () => {
 
       const errors = await validate(dto);
       const ageError = errors.find((error) => error.property === 'age');
-      expect(ageError?.constraints?.isNumber).toBe(
-        'age must be a number conforming to the specified constraints',
+      expect(ageError?.constraints?.isInt).toBe(
+        'age must be an integer number',
       );
     });
   });
 
-  describe('breed', () => {
-    it('accepts a max-length breed', async () => {
+  describe('breedId', () => {
+    it('accepts a minimum breed id', async () => {
       const dto = plainToInstance(CreateCatDto, {
         ...basePayload,
-        breed: 'a'.repeat(255),
+        breedId: 1,
       });
 
       const errors = await validate(dto);
       expect(errors).toHaveLength(0);
     });
 
-    it('rejects an empty breed', async () => {
+    it('rejects a breed id below minimum', async () => {
       const dto = plainToInstance(CreateCatDto, {
         ...basePayload,
-        breed: '',
+        breedId: 0,
       });
 
       const errors = await validate(dto);
-      const breedError = errors.find((error) => error.property === 'breed');
-      expect(breedError?.constraints?.minLength).toBe(
-        'breed must be longer than or equal to 1 characters',
+      const breedIdError = errors.find((error) => error.property === 'breedId');
+      expect(breedIdError?.constraints?.min).toBe(
+        'breedId must not be less than 1',
       );
     });
 
-    it('rejects an overlong breed', async () => {
+    it('rejects a non-integer breed id', async () => {
       const dto = plainToInstance(CreateCatDto, {
         ...basePayload,
-        breed: 'a'.repeat(256),
+        breedId: 1.5,
       });
 
       const errors = await validate(dto);
-      const breedError = errors.find((error) => error.property === 'breed');
-      expect(breedError?.constraints?.maxLength).toBe(
-        'breed must be shorter than or equal to 255 characters',
+      const breedIdError = errors.find((error) => error.property === 'breedId');
+      expect(breedIdError?.constraints?.isInt).toBe(
+        'breedId must be an integer number',
       );
     });
 
-    it('rejects a non-string breed', async () => {
+    it('rejects a non-number breed id', async () => {
       const dto = plainToInstance(CreateCatDto, {
         ...basePayload,
-        breed: 123,
+        breedId: '1',
       });
 
       const errors = await validate(dto);
-      const breedError = errors.find((error) => error.property === 'breed');
-      expect(breedError?.constraints?.isString).toBe('breed must be a string');
+      const breedIdError = errors.find((error) => error.property === 'breedId');
+      expect(breedIdError?.constraints?.isInt).toBe(
+        'breedId must be an integer number',
+      );
     });
   });
 });

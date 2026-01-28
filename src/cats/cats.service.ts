@@ -7,17 +7,19 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 export class CatsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(cat: Omit<Cat, 'id'>): Promise<Cat> {
+  async create(cat: Omit<Cat, 'id' | 'breed'>): Promise<Cat> {
     return await this.prisma.cat.create({
       data: cat,
+      include: { breed: true },
     });
   }
 
-  async update(cat: Cat): Promise<Cat | null> {
+  async update(cat: Omit<Cat, 'breed'>): Promise<Cat | null> {
     try {
       return await this.prisma.cat.update({
         where: { id: cat.id },
         data: cat,
+        include: { breed: true },
       });
     } catch (error) {
       if (
@@ -34,6 +36,7 @@ export class CatsService {
     try {
       return await this.prisma.cat.delete({
         where: { id },
+        include: { breed: true },
       });
     } catch (error) {
       if (
@@ -47,12 +50,15 @@ export class CatsService {
   }
 
   async findAll(): Promise<Cat[]> {
-    return await this.prisma.cat.findMany();
+    return await this.prisma.cat.findMany({
+      include: { breed: true },
+    });
   }
 
   async findOne(id: number): Promise<Cat | null> {
     return await this.prisma.cat.findUnique({
       where: { id },
+      include: { breed: true },
     });
   }
 }

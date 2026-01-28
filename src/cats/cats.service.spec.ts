@@ -17,14 +17,20 @@ describe('CatsService', () => {
   });
 
   it('create', async () => {
+    const breed = {
+      id: 1,
+      name: 'Munchkin',
+      description: 'Short legs and playful.',
+    };
     const input = {
       name: 'Mochi',
       age: 1,
-      breed: 'Munchkin',
+      breedId: breed.id,
     };
     const result = {
       id: 1,
       ...input,
+      breed,
     };
 
     const createSpy = jest
@@ -33,18 +39,27 @@ describe('CatsService', () => {
 
     await expect(service.create(input)).resolves.toEqual(result);
 
-    expect(createSpy).toHaveBeenCalledWith({ data: input });
+    expect(createSpy).toHaveBeenCalledWith({
+      data: input,
+      include: { breed: true },
+    });
   });
 
   it('update', async () => {
+    const breed = {
+      id: 2,
+      name: 'Ragdoll',
+      description: 'Gentle and affectionate.',
+    };
     const input = {
       id: 1,
       name: 'Luna',
       age: 3,
-      breed: 'Ragdoll',
+      breedId: breed.id,
     };
     const result = {
       ...input,
+      breed,
     };
 
     const updateSpy = jest
@@ -56,6 +71,7 @@ describe('CatsService', () => {
     expect(updateSpy).toHaveBeenCalledWith({
       where: { id: input.id },
       data: input,
+      include: { breed: true },
     });
   });
 
@@ -64,7 +80,7 @@ describe('CatsService', () => {
       id: 99,
       name: 'Luna',
       age: 3,
-      breed: 'Ragdoll',
+      breedId: 2,
     };
 
     jest.spyOn(prisma.cat, 'update').mockRejectedValue(
@@ -78,11 +94,17 @@ describe('CatsService', () => {
   });
 
   it('delete', async () => {
+    const breed = {
+      id: 3,
+      name: 'Siberian',
+      description: 'Thick coat and hardy.',
+    };
     const result = {
       id: 1,
       name: 'Poppy',
       age: 4,
-      breed: 'Siberian',
+      breedId: breed.id,
+      breed,
     };
 
     const deleteSpy = jest
@@ -91,7 +113,10 @@ describe('CatsService', () => {
 
     await expect(service.delete(1)).resolves.toEqual(result);
 
-    expect(deleteSpy).toHaveBeenCalledWith({ where: { id: 1 } });
+    expect(deleteSpy).toHaveBeenCalledWith({
+      where: { id: 1 },
+      include: { breed: true },
+    });
   });
 
   it('delete: not found resource', async () => {
@@ -106,12 +131,18 @@ describe('CatsService', () => {
   });
 
   it('findAll', async () => {
+    const breed = {
+      id: 1,
+      name: 'Siamese',
+      description: 'Known for their blue eyes.',
+    };
     const results = [
       {
         id: 1,
         name: 'Kitty',
         age: 2,
-        breed: 'Siamese',
+        breedId: breed.id,
+        breed,
       },
     ];
 
@@ -121,11 +152,17 @@ describe('CatsService', () => {
   });
 
   it('findOne', async () => {
+    const breed = {
+      id: 1,
+      name: 'Siamese',
+      description: 'Known for their blue eyes.',
+    };
     const result = {
       id: 1,
       name: 'Kitty',
       age: 2,
-      breed: 'Siamese',
+      breedId: breed.id,
+      breed,
     };
 
     const findUniqueSpy = jest
@@ -134,6 +171,9 @@ describe('CatsService', () => {
 
     await expect(service.findOne(1)).resolves.toEqual(result);
 
-    expect(findUniqueSpy).toHaveBeenCalledWith({ where: { id: 1 } });
+    expect(findUniqueSpy).toHaveBeenCalledWith({
+      where: { id: 1 },
+      include: { breed: true },
+    });
   });
 });
