@@ -34,6 +34,9 @@ describe('Cats (e2e)', () => {
         { id: 2, name: 'Fluffy', age: 5, breed: 'Persian' },
       ],
     });
+    await prisma.$executeRaw`
+      SELECT setval(pg_get_serial_sequence('"Cat"', 'id'), 2, true)
+    `;
   });
 
   afterEach(async () => {
