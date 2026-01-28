@@ -1,26 +1,78 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
+import { NotFoundException } from '@nestjs/common';
 import { CatsService } from './cats.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { BreedSelectionRule } from './breed-selection.rule';
 
 describe('CatsService', () => {
   let service: CatsService;
   let prisma: PrismaService;
+  let breedSelectionRule: BreedSelectionRule;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [CatsService, PrismaService],
+      providers: [CatsService, PrismaService, BreedSelectionRule],
     }).compile();
 
     service = module.get<CatsService>(CatsService);
     prisma = module.get<PrismaService>(PrismaService);
+    breedSelectionRule = module.get<BreedSelectionRule>(BreedSelectionRule);
+  });
+
+  it('findAll', async () => {
+    const breed = {
+      id: 1,
+      name: 'Siamese',
+      description: 'Known for their blue eyes.',
+    };
+    const results = [
+      {
+        id: 1,
+        name: 'Kitty',
+        age: 2,
+        breedId: breed.id,
+        breed,
+      },
+    ];
+
+    jest.spyOn(prisma.cat, 'findMany').mockResolvedValue(results);
+
+    await expect(service.findAll()).resolves.toEqual(results);
+  });
+
+  it('findOne', async () => {
+    const breed = {
+      id: 1,
+      name: 'Siamese',
+      description: 'Known for their blue eyes.',
+    };
+    const result = {
+      id: 1,
+      name: 'Kitty',
+      age: 2,
+      breedId: breed.id,
+      breed,
+    };
+
+    const findUniqueSpy = jest
+      .spyOn(prisma.cat, 'findUnique')
+      .mockResolvedValue(result);
+
+    await expect(service.findOne(1)).resolves.toEqual(result);
+
+    expect(findUniqueSpy).toHaveBeenCalledWith({
+      where: { id: 1 },
+      include: { breed: true },
+    });
   });
 
   it('create', async () => {
     const breed = {
       id: 1,
       name: 'Munchkin',
-      description: 'Short legs and playful.',
+      description:
+        'Munchkin cats are known for their short legs and playful nature.',
     };
     const input = {
       name: 'Mochi',
@@ -33,12 +85,22 @@ describe('CatsService', () => {
       breed,
     };
 
+    const canSelectForCreateSpy = jest
+      .spyOn(breedSelectionRule, 'canSelectForCreate')
+      .mockReturnValue(true);
+    const findUniqueSpy = jest
+      .spyOn(prisma.catBreed, 'findUnique')
+      .mockResolvedValue(breed);
     const createSpy = jest
       .spyOn(prisma.cat, 'create')
       .mockResolvedValue(result);
 
     await expect(service.create(input)).resolves.toEqual(result);
 
+    expect(findUniqueSpy).toHaveBeenCalledWith({
+      where: { id: breed.id },
+    });
+    expect(canSelectForCreateSpy).toHaveBeenCalledWith(breed);
     expect(createSpy).toHaveBeenCalledWith({
       data: input,
       include: { breed: true },
@@ -62,11 +124,25 @@ describe('CatsService', () => {
       breed,
     };
 
+    const findUniqueSpy = jest
+      .spyOn(prisma.catBreed, 'findUnique')
+      .mockResolvedValue(breed);
+
+    const canSelectForUpdateSpy = jest
+      .spyOn(breedSelectionRule, 'canSelectForUpdate')
+      .mockReturnValue(true);
+
     const updateSpy = jest
       .spyOn(prisma.cat, 'update')
       .mockResolvedValue(result);
 
     await expect(service.update(input)).resolves.toEqual(result);
+
+    expect(findUniqueSpy).toHaveBeenCalledWith({
+      where: { id: breed.id },
+    });
+
+    expect(canSelectForUpdateSpy).toHaveBeenCalledWith(breed, input);
 
     expect(updateSpy).toHaveBeenCalledWith({
       where: { id: input.id },
@@ -76,12 +152,21 @@ describe('CatsService', () => {
   });
 
   it('update: not found resource', async () => {
+    const breed = {
+      id: 2,
+      name: 'Ragdoll',
+      description: 'Gentle and affectionate.',
+    };
     const input = {
       id: 99,
       name: 'Luna',
       age: 3,
-      breedId: 2,
+      breedId: breed.id,
     };
+
+    jest.spyOn(prisma.catBreed, 'findUnique').mockResolvedValue(breed);
+
+    jest.spyOn(breedSelectionRule, 'canSelectForUpdate').mockReturnValue(true);
 
     jest.spyOn(prisma.cat, 'update').mockRejectedValue(
       new PrismaClientKnownRequestError('Not Found', {
@@ -130,50 +215,85 @@ describe('CatsService', () => {
     await expect(service.delete(999)).resolves.toBeNull();
   });
 
-  it('findAll', async () => {
-    const breed = {
+  it('findBreedOptionsForCreate', async () => {
+    const results = [
+      {
+        id: 1,
+        name: 'Munchkin',
+        description: 'Short legs and playful.',
+      },
+      {
+        id: 2,
+        name: 'Siamese',
+        description: 'Known for their blue eyes.',
+      },
+    ];
+
+    const canSelectForCreateSpy = jest
+      .spyOn(breedSelectionRule, 'canSelectForCreate')
+      .mockReturnValue(true);
+    const findManySpy = jest
+      .spyOn(prisma.catBreed, 'findMany')
+      .mockResolvedValue(results);
+
+    await expect(service.findBreedOptionsForCreate()).resolves.toEqual(results);
+
+    expect(findManySpy).toHaveBeenCalledWith({
+      orderBy: { name: 'asc' },
+    });
+    expect(canSelectForCreateSpy).toHaveBeenCalledTimes(results.length);
+  });
+
+  it('findBreedOptionsForUpdate', async () => {
+    const cat = {
       id: 1,
-      name: 'Siamese',
-      description: 'Known for their blue eyes.',
+      name: 'Kitty',
+      age: 2,
+      breedId: 1,
     };
     const results = [
       {
         id: 1,
-        name: 'Kitty',
-        age: 2,
-        breedId: breed.id,
-        breed,
+        name: 'Munchkin',
+        description: 'Short legs and playful.',
+      },
+      {
+        id: 2,
+        name: 'Siamese',
+        description: 'Known for their blue eyes.',
       },
     ];
 
-    jest.spyOn(prisma.cat, 'findMany').mockResolvedValue(results);
+    const canSelectForUpdateSpy = jest
+      .spyOn(breedSelectionRule, 'canSelectForUpdate')
+      .mockReturnValue(true);
 
-    await expect(service.findAll()).resolves.toEqual(results);
+    const findCatSpy = jest
+      .spyOn(prisma.cat, 'findUnique')
+      .mockResolvedValue(cat);
+
+    const findManySpy = jest
+      .spyOn(prisma.catBreed, 'findMany')
+      .mockResolvedValue(results);
+
+    await expect(service.findBreedOptionsForUpdate(cat.id)).resolves.toEqual(
+      results,
+    );
+
+    expect(findCatSpy).toHaveBeenCalledWith({ where: { id: cat.id } });
+
+    expect(findManySpy).toHaveBeenCalledWith({
+      orderBy: { name: 'asc' },
+    });
+
+    expect(canSelectForUpdateSpy).toHaveBeenCalledTimes(results.length);
   });
 
-  it('findOne', async () => {
-    const breed = {
-      id: 1,
-      name: 'Siamese',
-      description: 'Known for their blue eyes.',
-    };
-    const result = {
-      id: 1,
-      name: 'Kitty',
-      age: 2,
-      breedId: breed.id,
-      breed,
-    };
+  it('findBreedOptionsForUpdate: not found resource', async () => {
+    jest.spyOn(prisma.cat, 'findUnique').mockResolvedValue(null);
 
-    const findUniqueSpy = jest
-      .spyOn(prisma.cat, 'findUnique')
-      .mockResolvedValue(result);
-
-    await expect(service.findOne(1)).resolves.toEqual(result);
-
-    expect(findUniqueSpy).toHaveBeenCalledWith({
-      where: { id: 1 },
-      include: { breed: true },
-    });
+    await expect(service.findBreedOptionsForUpdate(1)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
   });
 });

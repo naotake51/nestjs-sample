@@ -6,12 +6,12 @@ import {
   Put,
   Param,
   Delete,
-  NotFoundException,
   ParseIntPipe,
 } from '@nestjs/common';
 import { CreateCatDto } from './dto/create-cat-dto';
 import { UpdateCatDto } from './dto/update-cat-dto';
 import { CatResponseDto } from './dto/cat-response-dto';
+import { CatBreedOptionResponseDto } from './dto/cat-breed-option-response-dto';
 import { CatsService } from './cats.service';
 import {
   ApiBadRequestResponse,
@@ -20,24 +20,11 @@ import {
 } from '@nestjs/swagger';
 import { ErrorResponseDto } from '../dto/error-response';
 import { plainToInstance } from 'class-transformer';
+import { NotFoundException } from '@nestjs/common';
 
 @Controller('cats')
 export class CatsController {
   constructor(private catsService: CatsService) {}
-
-  @Post()
-  @ApiBadRequestResponse({
-    description: 'Invalid input',
-    type: ErrorResponseDto,
-  })
-  @ApiOkResponse({ description: 'Cat created', type: CatResponseDto })
-  async create(@Body() createCatDto: CreateCatDto): Promise<CatResponseDto> {
-    const cat = await this.catsService.create(createCatDto);
-
-    return plainToInstance(CatResponseDto, cat, {
-      excludeExtraneousValues: true,
-    });
-  }
 
   @Get()
   @ApiOkResponse({ description: 'Cat found', type: [CatResponseDto] })
@@ -73,9 +60,35 @@ export class CatsController {
     });
   }
 
+  @Post()
+  @ApiBadRequestResponse({
+    description: 'Invalid input',
+    type: ErrorResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid breed selection',
+    type: ErrorResponseDto,
+  })
+  @ApiOkResponse({ description: 'Cat created', type: CatResponseDto })
+  async create(@Body() createCatDto: CreateCatDto): Promise<CatResponseDto> {
+    const cat = await this.catsService.create(createCatDto);
+
+    return plainToInstance(CatResponseDto, cat, {
+      excludeExtraneousValues: true,
+    });
+  }
+
   @Put(':id')
   @ApiBadRequestResponse({
     description: 'Invalid ID supplied',
+    type: ErrorResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input',
+    type: ErrorResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid breed selection',
     type: ErrorResponseDto,
   })
   @ApiNotFoundResponse({
@@ -116,6 +129,42 @@ export class CatsController {
     }
 
     return plainToInstance(CatResponseDto, cat, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  @Get('breed-options')
+  @ApiOkResponse({
+    description: 'Cat breed options for create',
+    type: [CatBreedOptionResponseDto],
+  })
+  async findCreateBreedOptions(): Promise<CatBreedOptionResponseDto[]> {
+    const breeds = await this.catsService.findBreedOptionsForCreate();
+
+    return plainToInstance(CatBreedOptionResponseDto, breeds, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  @Get(':id/breed-options')
+  @ApiBadRequestResponse({
+    description: 'Invalid ID supplied',
+    type: ErrorResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'Cat not found',
+    type: ErrorResponseDto,
+  })
+  @ApiOkResponse({
+    description: 'Cat breed options for update',
+    type: [CatBreedOptionResponseDto],
+  })
+  async findUpdateBreedOptions(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<CatBreedOptionResponseDto[]> {
+    const breeds = await this.catsService.findBreedOptionsForUpdate(id);
+
+    return plainToInstance(CatBreedOptionResponseDto, breeds, {
       excludeExtraneousValues: true,
     });
   }

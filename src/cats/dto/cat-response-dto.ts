@@ -20,7 +20,9 @@ export class CatBreedResponseDto {
 
   @ApiProperty({
     description: 'The description of a cat breed',
-    example: 'Known for their slender bodies and blue eyes.',
+    example: 'Siamese cats are known for their slender bodies and blue eyes.',
+    minLength: 1,
+    maxLength: 1000,
   })
   @Expose()
   readonly description: string;

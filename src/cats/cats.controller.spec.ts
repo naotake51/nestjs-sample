@@ -3,6 +3,7 @@ import { CatsController } from './cats.controller';
 import { CatsService } from './cats.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { NotFoundException } from '@nestjs/common';
+import { BreedSelectionRule } from './breed-selection.rule';
 
 describe('CatsController', () => {
   let controller: CatsController;
@@ -12,7 +13,7 @@ describe('CatsController', () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [PrismaModule],
       controllers: [CatsController],
-      providers: [CatsService],
+      providers: [CatsService, BreedSelectionRule],
     }).compile();
 
     controller = module.get<CatsController>(CatsController);
@@ -23,7 +24,8 @@ describe('CatsController', () => {
     const breed = {
       id: 1,
       name: 'Siamese',
-      description: 'Known for their blue eyes.',
+      description:
+        'Siamese cats are known for their slender bodies and blue eyes.',
     };
     const results = [
       {
@@ -44,11 +46,82 @@ describe('CatsController', () => {
     expect(findAllSpy).toHaveBeenCalledTimes(1);
   });
 
+  it('findCreateBreedOptions', async () => {
+    const results = [
+      {
+        id: 1,
+        name: 'Siamese',
+      },
+      {
+        id: 2,
+        name: 'Munchkin',
+      },
+    ];
+
+    const findBreedOptionsSpy = jest
+      .spyOn(service, 'findBreedOptionsForCreate')
+      .mockResolvedValue([
+        {
+          id: 1,
+          name: 'Siamese',
+          description:
+            'Siamese cats are known for their slender bodies and blue eyes.',
+        },
+        {
+          id: 2,
+          name: 'Munchkin',
+          description:
+            'Munchkin cats are known for their short legs and playful nature.',
+        },
+      ]);
+
+    expect(await controller.findCreateBreedOptions()).toEqual(results);
+
+    expect(findBreedOptionsSpy).toHaveBeenCalledWith();
+    expect(findBreedOptionsSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('findUpdateBreedOptions', async () => {
+    const results = [
+      {
+        id: 1,
+        name: 'Siamese',
+      },
+    ];
+
+    const findBreedOptionsSpy = jest
+      .spyOn(service, 'findBreedOptionsForUpdate')
+      .mockResolvedValue([
+        {
+          id: 1,
+          name: 'Siamese',
+          description:
+            'Siamese cats are known for their slender bodies and blue eyes.',
+        },
+      ]);
+
+    expect(await controller.findUpdateBreedOptions(1)).toEqual(results);
+
+    expect(findBreedOptionsSpy).toHaveBeenCalledWith(1);
+    expect(findBreedOptionsSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('findUpdateBreedOptions: not found resource', async () => {
+    jest
+      .spyOn(service, 'findBreedOptionsForUpdate')
+      .mockRejectedValue(new NotFoundException('Cat not found'));
+
+    await expect(controller.findUpdateBreedOptions(1)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+  });
+
   it('findOne', async () => {
     const breed = {
       id: 1,
       name: 'Siamese',
-      description: 'Known for their blue eyes.',
+      description:
+        'Siamese cats are known for their slender bodies and blue eyes.',
     };
     const result = {
       id: 1,
@@ -85,7 +158,8 @@ describe('CatsController', () => {
     const breed = {
       id: 1,
       name: 'Munchkin',
-      description: 'Short legs and playful.',
+      description:
+        'Munchkin cats are known for their short legs and playful nature.',
     };
     const result = {
       id: 1,
@@ -110,7 +184,8 @@ describe('CatsController', () => {
     const breed = {
       id: 2,
       name: 'Ragdoll',
-      description: 'Gentle and affectionate.',
+      description:
+        'Ragdoll cats are known for their blue eyes and docile temperament.',
     };
     const result = {
       id: 1,
@@ -148,7 +223,7 @@ describe('CatsController', () => {
     const breed = {
       id: 3,
       name: 'Siberian',
-      description: 'Thick coat and hardy.',
+      description: 'Siberian cats are known for their thick fur and agility.',
     };
     const result = {
       id: 1,
