@@ -7,12 +7,12 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateCatDto } from './dto/create-cat-dto';
 import { UpdateCatDto } from './dto/update-cat-dto';
 import { CatResponseDto } from './dto/cat-response-dto';
 import { CatBreedOptionResponseDto } from './dto/cat-breed-option-response-dto';
-import { CatsService } from './cats.service';
 import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
@@ -20,16 +20,30 @@ import {
 } from '@nestjs/swagger';
 import { ErrorResponseDto } from '../dto/error-response';
 import { plainToInstance } from 'class-transformer';
-import { NotFoundException } from '@nestjs/common';
+import { CreateCatUsecase } from './usecases/create-cat.usecase';
+import { UpdateCatUsecase } from './usecases/update-cat.usecase';
+import { DeleteCatUsecase } from './usecases/delete-cat.usecase';
+import { FindAllCatsUsecase } from './usecases/find-all-cats.usecase';
+import { FindCatUsecase } from './usecases/find-cat.usecase';
+import { FindBreedOptionsForCreateUsecase } from './usecases/find-breed-options-for-create.usecase';
+import { FindBreedOptionsForUpdateUsecase } from './usecases/find-breed-options-for-update.usecase';
 
 @Controller('cats')
 export class CatsController {
-  constructor(private catsService: CatsService) {}
+  constructor(
+    private createCatUsecase: CreateCatUsecase,
+    private updateCatUsecase: UpdateCatUsecase,
+    private deleteCatUsecase: DeleteCatUsecase,
+    private findAllCatsUsecase: FindAllCatsUsecase,
+    private findCatUsecase: FindCatUsecase,
+    private findBreedOptionsForCreateUsecase: FindBreedOptionsForCreateUsecase,
+    private findBreedOptionsForUpdateUsecase: FindBreedOptionsForUpdateUsecase,
+  ) {}
 
   @Get()
   @ApiOkResponse({ description: 'Cat found', type: [CatResponseDto] })
   async findAll(): Promise<CatResponseDto[]> {
-    const cats = await this.catsService.findAll();
+    const cats = await this.findAllCatsUsecase.execute();
 
     return plainToInstance(CatResponseDto, cats, {
       excludeExtraneousValues: true,
@@ -49,7 +63,7 @@ export class CatsController {
   async findOne(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<CatResponseDto | null> {
-    const cat = await this.catsService.findOne(id);
+    const cat = await this.findCatUsecase.execute(id);
 
     if (!cat) {
       throw new NotFoundException('Cat not found');
@@ -71,7 +85,7 @@ export class CatsController {
   })
   @ApiOkResponse({ description: 'Cat created', type: CatResponseDto })
   async create(@Body() createCatDto: CreateCatDto): Promise<CatResponseDto> {
-    const cat = await this.catsService.create(createCatDto);
+    const cat = await this.createCatUsecase.execute(createCatDto);
 
     return plainToInstance(CatResponseDto, cat, {
       excludeExtraneousValues: true,
@@ -100,7 +114,7 @@ export class CatsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateCatDto: UpdateCatDto,
   ): Promise<CatResponseDto> {
-    const cat = await this.catsService.update({ id, ...updateCatDto });
+    const cat = await this.updateCatUsecase.execute({ id, ...updateCatDto });
 
     if (!cat) {
       throw new NotFoundException('Cat not found');
@@ -122,7 +136,7 @@ export class CatsController {
   })
   @ApiOkResponse({ description: 'Cat deleted', type: CatResponseDto })
   async remove(@Param('id', ParseIntPipe) id: number): Promise<CatResponseDto> {
-    const cat = await this.catsService.delete(id);
+    const cat = await this.deleteCatUsecase.execute(id);
 
     if (!cat) {
       throw new NotFoundException('Cat not found');
@@ -139,7 +153,7 @@ export class CatsController {
     type: [CatBreedOptionResponseDto],
   })
   async findCreateBreedOptions(): Promise<CatBreedOptionResponseDto[]> {
-    const breeds = await this.catsService.findBreedOptionsForCreate();
+    const breeds = await this.findBreedOptionsForCreateUsecase.execute();
 
     return plainToInstance(CatBreedOptionResponseDto, breeds, {
       excludeExtraneousValues: true,
@@ -162,7 +176,7 @@ export class CatsController {
   async findUpdateBreedOptions(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<CatBreedOptionResponseDto[]> {
-    const breeds = await this.catsService.findBreedOptionsForUpdate(id);
+    const breeds = await this.findBreedOptionsForUpdateUsecase.execute(id);
 
     return plainToInstance(CatBreedOptionResponseDto, breeds, {
       excludeExtraneousValues: true,
